@@ -21,7 +21,6 @@ public class TransactionService {
 
     @Transactional
     public String transfer(TransferRequest request) {
-        // Tạm thời hardcode userId=1 (sau này sẽ lấy từ SecurityContext)
         Account source = accountRepository.findByUserId(1L)
                 .orElseThrow(() -> new RuntimeException("Source account not found"));
 

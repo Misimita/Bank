@@ -8,8 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 public class UserService {
 
@@ -19,17 +17,29 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    public java.util.Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
     @Transactional(readOnly = true)
     public Page<UserResponseDto> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(user -> UserResponseDto.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .fullName(user.getFullName())
-                        .email(user.getEmail())
-                        .phone(user.getPhone())
-                        .role(user.getRole().name())
-                        .isKyc(user.isKyc())
-                        .build());
+                .map(this::toDto);
+    }
+
+    private UserResponseDto toDto(User user) {
+        UserResponseDto dto = new UserResponseDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setFullName(user.getFullName());
+        dto.setPhone(user.getPhone());
+        dto.setKyc(user.isKyc());
+        return dto;
     }
 }

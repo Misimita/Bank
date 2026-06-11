@@ -3,17 +3,14 @@ package org.example.project.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.example.project.entity.enums.Role;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,16 +27,10 @@ public class User {
     private String fullName;
     private String phone;
 
+    private boolean isKyc = false;
+
     @Enumerated(EnumType.STRING)
     private Role role = Role.CUSTOMER;
 
-    private boolean isKyc = false;
-
     private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt;
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

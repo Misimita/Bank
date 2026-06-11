@@ -1,18 +1,13 @@
 package org.example.project.dto;
 
-import lombok.*;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data
 public class UserResponseDto {
     private Long id;
     private String username;
-    private String fullName;
     private String email;
+    private String fullName;
     private String phone;
-    private String role;
     private boolean isKyc;
 }
