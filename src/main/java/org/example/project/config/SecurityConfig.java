@@ -34,18 +34,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép tất cả auth (cả có /api và không có)
-                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
-                        .requestMatchers("/api/v1/kyc/**", "/v1/kyc/**").permitAll()
-
+                        .requestMatchers("/api/auth/**", "/api/v1/kyc/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/staff/**").hasRole("STAFF")
                         .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

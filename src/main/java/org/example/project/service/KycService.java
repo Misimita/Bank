@@ -1,41 +1,47 @@
 package org.example.project.service;
 
 import org.example.project.entity.KycProfile;
-import org.example.project.entity.User;
 import org.example.project.entity.enums.KycStatus;
+import org.example.project.entity.User;
 import org.example.project.repository.KycProfileRepository;
 import org.example.project.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+
 @Service
 public class KycService {
 
-    private final KycProfileRepository kycProfileRepository;
     private final UserRepository userRepository;
+    private final KycProfileRepository kycProfileRepository;
 
-    public KycService(KycProfileRepository kycProfileRepository, UserRepository userRepository) {
-        this.kycProfileRepository = kycProfileRepository;
+    public KycService(UserRepository userRepository, KycProfileRepository kycProfileRepository) {
         this.userRepository = userRepository;
+        this.kycProfileRepository = kycProfileRepository;
     }
 
     @Transactional
-    public String uploadKyc(String username, MultipartFile front, MultipartFile back) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+    public String uploadKyc(Long userId, MultipartFile document) throws IOException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // TODO: Upload to Cloudinary / AWS S3 → lấy URL
-        String frontUrl = "https://example.com/front.jpg"; // Thay bằng URL thật sau
-        String backUrl = "https://example.com/back.jpg";
+        String fileName = UUID.randomUUID() + "_" + document.getOriginalFilename();
+        Path uploadPath = Paths.get("uploads/" + fileName);
+        Files.createDirectories(uploadPath.getParent());
+        Files.write(uploadPath, document.getBytes());
 
-        KycProfile kyc = KycProfile.builder()
-                .user(user)
-                .idCardFrontUrl(frontUrl)
-                .idCardBackUrl(backUrl)
-                .status(KycStatus.PENDING)
-                .build();
-
+        KycProfile kyc = new KycProfile();
+        kyc.setUser(user);
+        kyc.setIdCardFrontUrl("/uploads/" + fileName);
+        kyc.setStatus(KycStatus.PENDING);
         kycProfileRepository.save(kyc);
-        return "KYC uploaded successfully - PENDING approval";
+
+        return "KYC uploaded successfully";
     }
 }

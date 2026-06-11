@@ -1,14 +1,10 @@
 package org.example.project.dto;
 
-import lombok.*;
+import lombok.Data;
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class TransferRequest {
     private String targetAccountNumber;
     private BigDecimal amount;
-    private String description;
 }
