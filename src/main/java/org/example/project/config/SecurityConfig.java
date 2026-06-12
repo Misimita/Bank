@@ -24,7 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity(debug = true)
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true)   // ← BẮT BUỘC
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -36,25 +36,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/api/v1/kyc/upload").permitAll()
 
-                        // Phân quyền theo SRS
+                        // SỬ DỤNG hasAuthority (không ROLE_)
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/v1/staff/**").hasAuthority("STAFF")
                         .requestMatchers("/api/v1/users/**").hasAnyAuthority("ADMIN", "STAFF")
-
-                        .requestMatchers("/api/v1/accounts/**", "/api/v1/transactions/**",
-                                "/api/v1/customer/**").hasAnyAuthority("CUSTOMER", "ADMIN", "STAFF")
+                        .requestMatchers("/api/v1/accounts/**", "/api/v1/transactions/**", "/api/v1/customer/**")
+                        .hasAnyAuthority("CUSTOMER", "ADMIN", "STAFF")
 
                         .anyRequest().authenticated()
                 )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
