@@ -45,19 +45,14 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC
                         .requestMatchers("/api/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/api/v1/kyc/upload").permitAll()
 
-                        // QUẢN LÝ USER - CHO ADMIN & STAFF
-                        .requestMatchers("/api/v1/users/**").hasAnyAuthority("ADMIN", "STAFF")
+                        .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/staff/**").hasRole("STAFF")
+                        .requestMatchers("/api/v1/customer/**").hasRole("CUSTOMER")
 
-                        // CÁC RULE KHÁC
-                        .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/v1/staff/**").hasAuthority("STAFF")
-                        .requestMatchers("/api/v1/customer/**").hasAuthority("CUSTOMER")
-
-                        // CUỐI CÙNG MỚI ĐẾN ANYREQUEST
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
