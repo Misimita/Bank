@@ -9,9 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class UserService {
 
@@ -23,23 +20,21 @@ public class UserService {
 
     public Page<UserResponseDto> getAllUsers(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<User> usersPage = userRepository.findAll(pageable);
 
-        return usersPage.map(user -> new UserResponseDto(
-                user.getId(),
-                user.getUsername(),
-                user.getFullName(),
-                user.getEmail(),
-                user.isKyc()
-        ));
+        // Sử dụng projection để lấy thêm accountNumber và balance
+        Page<UserResponseDto> usersPage = userRepository.findAllUsers(pageable);
+
+        return usersPage;
     }
 
     @Transactional
     public void changePin(Long userId, String newPin) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // TODO: Mã hóa PIN bằng BCrypt theo SRS
-        user.setPin(newPin); // Stub - sau thay bằng BCrypt
+
+        // TODO: Mã hóa PIN bằng BCrypt theo SRS (strength 10)
+        // user.setPin(bCryptPasswordEncoder.encode(newPin));
+        user.setPin(newPin); // tạm thời
         userRepository.save(user);
     }
 }

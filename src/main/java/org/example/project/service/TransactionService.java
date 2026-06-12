@@ -1,20 +1,18 @@
 package org.example.project.service;
 
-import org.example.project.dto.TransactionResponseDto;
 import org.example.project.dto.TransferRequest;
+import org.example.project.dto.TransferResponse;
 import org.example.project.entity.Account;
 import org.example.project.entity.Transaction;
+import org.example.project.exception.InsufficientBalanceException;
 import org.example.project.repository.AccountRepository;
 import org.example.project.repository.TransactionRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TransactionService {
@@ -29,48 +27,52 @@ public class TransactionService {
     }
 
     @Transactional
-    public void transfer(TransferRequest request) {
+    public TransferResponse transfer(TransferRequest request) {
+
+        // Tìm tài khoản nguồn và đích
         Account source = accountRepository.findByAccountNumber(request.getSourceAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Source account not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản nguồn: " + request.getSourceAccountNumber()));
 
         Account target = accountRepository.findByAccountNumber(request.getTargetAccountNumber())
-                .orElseThrow(() -> new RuntimeException("Target account not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản đích: " + request.getTargetAccountNumber()));
 
-        if (source.getBalance().compareTo(request.getAmount()) < 0) {
-            throw new RuntimeException("Insufficient balance");
+        BigDecimal amount = request.getAmount();
+
+        // Kiểm tra số dư
+        if (source.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Số dư không đủ để thực hiện giao dịch");
         }
 
-        // Trừ tiền nguồn
-        source.setBalance(source.getBalance().subtract(request.getAmount()));
-        // Cộng tiền đích
-        target.setBalance(target.getBalance().add(request.getAmount()));
+        // Thực hiện chuyển tiền
+        BigDecimal sourceNewBalance = source.getBalance().subtract(amount);
+        BigDecimal targetNewBalance = target.getBalance().add(amount);
+
+        source.setBalance(sourceNewBalance);
+        target.setBalance(targetNewBalance);
 
         accountRepository.save(source);
         accountRepository.save(target);
 
-        // Tạo Transaction record
-        Transaction tx = new Transaction();
-        tx.setFromAccount(source);
-        tx.setToAccount(target);
-        tx.setAmount(request.getAmount());
-        tx.setTransactionType("TRANSFER");
-        tx.setTimestamp(LocalDateTime.now());
-        transactionRepository.save(tx);
-    }
+        // Tạo Transaction
+        Transaction transaction = new Transaction();
+        transaction.setFromAccount(source);
+        transaction.setToAccount(target);
+        transaction.setAmount(amount);
+        transaction.setTransactionType("TRANSFER");
+        // timestamp sẽ tự set nhờ @PrePersist
 
-    public Page<TransactionResponseDto> getTransactionHistory(String accountNumber, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        // Query OR from/to account (theo SRS UC-06)
-        Page<Transaction> txPage = transactionRepository.findByFromAccount_AccountNumberOrToAccount_AccountNumber(
-                accountNumber, accountNumber, pageable);
+        transactionRepository.save(transaction);
 
-        return txPage.map(tx -> new TransactionResponseDto(
-                tx.getId(),
-                tx.getFromAccount() != null ? tx.getFromAccount().getAccountNumber() : null,
-                tx.getToAccount() != null ? tx.getToAccount().getAccountNumber() : null,
-                tx.getAmount(),
-                tx.getTransactionType(),
-                tx.getTimestamp()
-        ));
+        // Trả về response đầy đủ thông tin
+        return new TransferResponse(
+                source.getAccountNumber(),
+                target.getAccountNumber(),
+                amount,
+                sourceNewBalance,
+                targetNewBalance,
+                transaction.getId().toString(),   // Dùng ID của Transaction
+                LocalDateTime.now(),
+                "Chuyển khoản thành công"
+        );
     }
 }
