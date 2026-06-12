@@ -34,7 +34,12 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFullName(request.getUsername()); // tạm thời
+
+        // === ĐẦY ĐỦ GIÁ TRỊ MẶC ĐỊNH ĐỂ TRÁNH NULL ===
+        user.setFullName(request.getFullName() != null ? request.getFullName() : request.getUsername());
+        user.setEmail(request.getEmail() != null ? request.getEmail() : request.getUsername() + "@rikkei.bank");
+        user.setPhone(request.getPhone() != null ? request.getPhone() : "0123456789");
+        user.setPin("0000");                    // PIN mặc định
         user.setRole("CUSTOMER");
         user.setKyc(false);
 

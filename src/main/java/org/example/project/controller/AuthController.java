@@ -16,16 +16,16 @@ public class AuthController {
         this.authService = authService;
     }
 
+    // FR-04: Register
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.register(request));
+    }
+
     // FR-01: Login
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.login(request));
-    }
-
-    // FR-04: Đăng ký (Register) - Public
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authService.register(request));
     }
 
     // FR-03: Logout
